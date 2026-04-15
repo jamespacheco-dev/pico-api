@@ -55,8 +55,14 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 }
 
 func selectorFor(d game.Difficulty) game.Selector {
-	// TODO: replace with proper Medium and Hard selectors once AI is implemented.
-	return game.RandomSelector{}
+	switch d {
+	case game.DifficultyMedium:
+		return game.MediumSelector{}
+	case game.DifficultyHard:
+		return game.HardSelector{}
+	default:
+		return game.RandomSelector{}
+	}
 }
 
 // --- Handlers ---
