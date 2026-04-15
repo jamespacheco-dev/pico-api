@@ -54,7 +54,7 @@ jobs:
       - name: Configure kubeconfig
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG_PICO }}" | base64 --decode > ~/.kube/config
+          printf '%s' "${{ secrets.KUBECONFIG_PICO }}" | tr -d '[:space:]' | base64 --decode > ~/.kube/config
           chmod 600 ~/.kube/config
 
       - name: Deploy
