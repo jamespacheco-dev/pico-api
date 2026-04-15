@@ -8,7 +8,8 @@ import (
 )
 
 func main() {
-	router := api.NewRouter()
+	store := api.NewMemoryStore()
+	router := api.NewRouter(store)
 	log.Println("Starting pico-api on :8080")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

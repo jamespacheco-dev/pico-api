@@ -2,9 +2,9 @@ package api
 
 import "net/http"
 
-func NewRouter() http.Handler {
+func NewRouter(store Store) http.Handler {
 	mux := http.NewServeMux()
-	h := NewHandler()
+	h := NewHandler(store)
 
 	mux.HandleFunc("POST /games", h.CreateGame)
 	mux.HandleFunc("GET /games/{id}", h.GetGame)
