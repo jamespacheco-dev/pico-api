@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: pico-api
   namespace: pico
+  labels:
+    app: pico-api
 spec:
   selector:
     app: pico-api
