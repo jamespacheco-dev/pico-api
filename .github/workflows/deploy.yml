@@ -64,9 +64,6 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
           DOMAIN: ${{ vars.DOMAIN }}
         run: |
-          kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/service.yaml
-          kubectl apply -f k8s/servicemonitor.yaml
           envsubst < k8s/deployment.yaml.tpl | kubectl apply -f -
           envsubst < k8s/ingress.yaml.tpl | kubectl apply -f -
           kubectl rollout status deployment/pico-api -n pico
