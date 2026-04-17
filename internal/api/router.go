@@ -1,15 +1,21 @@
 package api
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/jamespacheco-dev/pico-api/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+)
 
 func NewRouter(store Store) http.Handler {
 	mux := http.NewServeMux()
 	h := NewHandler(store)
 
-	mux.HandleFunc("POST /games", h.CreateGame)
-	mux.HandleFunc("GET /games/{id}", h.GetGame)
-	mux.HandleFunc("POST /games/{id}/guesses", h.CreateGuess)
-	mux.HandleFunc("POST /games/{id}/rollback", h.Rollback)
+	mux.HandleFunc("POST /games", metrics.Middleware("POST /games", h.CreateGame))
+	mux.HandleFunc("GET /games/{id}", metrics.Middleware("GET /games/{id}", h.GetGame))
+	mux.HandleFunc("POST /games/{id}/guesses", metrics.Middleware("POST /games/{id}/guesses", h.CreateGuess))
+	mux.HandleFunc("POST /games/{id}/rollback", metrics.Middleware("POST /games/{id}/rollback", h.Rollback))
+	mux.Handle("GET /metrics", promhttp.Handler())
 
 	return corsMiddleware(mux)
 }

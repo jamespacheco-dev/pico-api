@@ -3,9 +3,12 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/jamespacheco-dev/pico-api/internal/game"
+	"github.com/jamespacheco-dev/pico-api/internal/metrics"
 )
 
 type Handler struct {
@@ -98,6 +101,9 @@ func (h *Handler) CreateGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	metrics.GamesCreated.WithLabelValues(string(req.Mode), fmt.Sprintf("%d", req.Length)).Inc()
+	metrics.ActiveGames.Inc()
+
 	writeJSON(w, http.StatusCreated, g)
 }
 
@@ -150,15 +156,25 @@ func (h *Handler) CreateGuess(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		fb := game.Feedback{Pico: req.Feedback.Pico, Fermi: req.Feedback.Fermi}
-		if _, err := g.ApplyFeedback(fb); err != nil {
+		start := time.Now()
+		_, err := g.ApplyFeedback(fb)
+		if err != nil {
 			writeGuessError(w, err)
 			return
 		}
+		metrics.AIGuessLatency.WithLabelValues(string(g.Difficulty)).Observe(time.Since(start).Seconds())
 	}
 
 	if err := h.store.Save(g); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal_error", "failed to save game")
 		return
+	}
+
+	if g.IsComplete() {
+		mode, diff := string(g.Mode), string(g.Difficulty)
+		metrics.GamesCompleted.WithLabelValues(mode, diff).Inc()
+		metrics.GuessesPerGame.WithLabelValues(mode, diff).Observe(float64(len(g.Guesses)))
+		metrics.ActiveGames.Dec()
 	}
 
 	writeJSON(w, http.StatusOK, g)
@@ -195,6 +211,8 @@ func (h *Handler) Rollback(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	metrics.Rollbacks.Inc()
 
 	if err := h.store.Save(g); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal_error", "failed to save game")
