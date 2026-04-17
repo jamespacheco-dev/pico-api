@@ -257,15 +257,31 @@ func TestRollback_OutOfRange(t *testing.T) {
 	if err := g.Rollback(5); !errors.Is(err, ErrOutOfRange) {
 		t.Errorf("expected ErrOutOfRange, got %v", err)
 	}
-	if err := g.Rollback(0); !errors.Is(err, ErrOutOfRange) {
-		t.Errorf("expected ErrOutOfRange for 0, got %v", err)
+	if err := g.Rollback(-1); !errors.Is(err, ErrOutOfRange) {
+		t.Errorf("expected ErrOutOfRange for -1, got %v", err)
 	}
 }
 
-func TestRollback_NoGuesses(t *testing.T) {
-	g := newComputerGame("012", generateCandidates(3, false))
-	if err := g.Rollback(1); !errors.Is(err, ErrNoGuesses) {
-		t.Errorf("expected ErrNoGuesses, got %v", err)
+func TestRollback_ToZero(t *testing.T) {
+	candidates := generateCandidates(3, true)
+	g := newComputerGame("012", candidates)
+	g.ApplyFeedback(Feedback{Pico: 1, Fermi: 0})
+	g.ApplyFeedback(Feedback{Pico: 0, Fermi: 1})
+
+	if err := g.Rollback(0); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(g.Guesses) != 0 {
+		t.Errorf("expected 0 guesses after rollback to 0, got %d", len(g.Guesses))
+	}
+	if len(g.candidates) != len(candidates) {
+		t.Errorf("expected full candidate pool after rollback to 0, got %d", len(g.candidates))
+	}
+	if g.CurrentGuess == "" {
+		t.Error("expected a new current guess after rollback to 0")
+	}
+	if g.Status != StatusInProgress {
+		t.Errorf("Status = %v, want in_progress", g.Status)
 	}
 }
 

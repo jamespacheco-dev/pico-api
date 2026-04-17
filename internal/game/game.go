@@ -70,7 +70,6 @@ var (
 	ErrWrongMode     = errors.New("wrong mode for this operation")
 	ErrGameComplete  = errors.New("game is already complete")
 	ErrContradictory = errors.New("contradictory feedback: no valid candidates remain")
-	ErrNoGuesses     = errors.New("no guesses to roll back")
 	ErrOutOfRange    = errors.New("to_guess is out of range")
 )
 
@@ -154,10 +153,7 @@ func (g *Game) Rollback(toGuess int) error {
 	if g.Mode != ModeComputerGuesses {
 		return ErrWrongMode
 	}
-	if len(g.Guesses) == 0 {
-		return ErrNoGuesses
-	}
-	if toGuess < 1 || toGuess > len(g.Guesses) {
+	if toGuess < 0 || toGuess > len(g.Guesses) {
 		return ErrOutOfRange
 	}
 

@@ -202,8 +202,6 @@ func (h *Handler) Rollback(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, game.ErrWrongMode):
 			writeError(w, http.StatusUnprocessableEntity, "rollback_not_supported", "rollback is only available in computer_guesses mode")
-		case errors.Is(err, game.ErrNoGuesses):
-			writeError(w, http.StatusUnprocessableEntity, "no_guesses", "no guesses to roll back")
 		case errors.Is(err, game.ErrOutOfRange):
 			writeError(w, http.StatusBadRequest, "invalid_guess_number", "to_guess is out of range")
 		default:
