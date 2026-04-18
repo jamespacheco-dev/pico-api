@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/jamespacheco-dev/pico-api/internal/game"
 )
@@ -48,6 +49,8 @@ func (s *mockStore) Save(g *game.Game) error {
 	s.games[g.ID] = g
 	return nil
 }
+
+func (s *mockStore) Sweep(_ time.Duration) int { return 0 }
 
 // --- Helpers ---
 

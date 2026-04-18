@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/jamespacheco-dev/pico-api/internal/game"
 )
@@ -15,6 +16,9 @@ type Store interface {
 	Create(g *game.Game) error
 	Get(id string) (*game.Game, error)
 	Save(g *game.Game) error
+	// Sweep deletes in-progress games with no activity for longer than idle.
+	// Returns the number of games removed.
+	Sweep(idle time.Duration) int
 }
 
 // MemoryStore is an in-memory Store implementation for development.
@@ -55,4 +59,18 @@ func (s *MemoryStore) Save(g *game.Game) error {
 	}
 	s.games[g.ID] = g
 	return nil
+}
+
+func (s *MemoryStore) Sweep(idle time.Duration) int {
+	cutoff := time.Now().Add(-idle)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var n int
+	for id, g := range s.games {
+		if g.Status == game.StatusInProgress && g.LastActivityAt.Before(cutoff) {
+			delete(s.games, id)
+			n++
+		}
+	}
+	return n
 }

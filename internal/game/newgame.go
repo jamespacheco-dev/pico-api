@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	mathrand "math/rand/v2"
+	"time"
 )
 
 // NewGame creates a new game session with the given configuration.
@@ -16,13 +17,14 @@ func NewGame(cfg Config, mode Mode, difficulty Difficulty, sel Selector) (*Game,
 	}
 
 	g := &Game{
-		ID:         id,
-		Mode:       mode,
-		Config:     cfg,
-		Difficulty: difficulty,
-		Status:     StatusInProgress,
-		Guesses:    []Guess{},
-		selector:   sel,
+		ID:             id,
+		Mode:           mode,
+		Config:         cfg,
+		Difficulty:     difficulty,
+		Status:         StatusInProgress,
+		Guesses:        []Guess{},
+		selector:       sel,
+		LastActivityAt: time.Now(),
 	}
 
 	candidates := generateCandidates(cfg.Length, cfg.AllowRepeats)

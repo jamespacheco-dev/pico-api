@@ -3,6 +3,7 @@ package game
 import (
 	"errors"
 	"fmt"
+	"time"
 )
 
 // Mode represents which player is guessing.
@@ -52,13 +53,14 @@ type Guess struct {
 
 // Game is a single game session.
 type Game struct {
-	ID           string     `json:"id"`
-	Mode         Mode       `json:"mode"`
-	Config       Config     `json:"config"`
-	Difficulty   Difficulty `json:"difficulty"`
-	Status       Status     `json:"status"`
-	CurrentGuess string     `json:"current_guess,omitempty"`
-	Guesses      []Guess    `json:"guesses"`
+	ID             string     `json:"id"`
+	Mode           Mode       `json:"mode"`
+	Config         Config     `json:"config"`
+	Difficulty     Difficulty `json:"difficulty"`
+	Status         Status     `json:"status"`
+	CurrentGuess   string     `json:"current_guess,omitempty"`
+	Guesses        []Guess    `json:"guesses"`
+	LastActivityAt time.Time  `json:"last_activity_at"`
 
 	secret     string
 	candidates []string
@@ -102,6 +104,7 @@ func (g *Game) ApplyGuess(guess string) (Feedback, error) {
 		g.Status = StatusComplete
 	}
 
+	g.LastActivityAt = time.Now()
 	return fb, nil
 }
 
@@ -143,6 +146,7 @@ func (g *Game) ApplyFeedback(fb Feedback) (string, error) {
 	}
 
 	g.CurrentGuess = g.selector.Select(g.candidates)
+	g.LastActivityAt = time.Now()
 	return g.CurrentGuess, nil
 }
 
@@ -166,6 +170,7 @@ func (g *Game) Rollback(toGuess int) error {
 
 	g.Status = StatusInProgress
 	g.CurrentGuess = g.selector.Select(g.candidates)
+	g.LastActivityAt = time.Now()
 	return nil
 }
 
