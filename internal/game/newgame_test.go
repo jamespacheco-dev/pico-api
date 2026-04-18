@@ -93,3 +93,59 @@ func TestNewGame_SecretIsValidCandidate(t *testing.T) {
 		t.Errorf("secret %q is not a valid candidate", g.secret)
 	}
 }
+
+func TestOptimalGuesses(t *testing.T) {
+	cases := []struct {
+		length       int
+		allowRepeats bool
+		want         int
+	}{
+		{3, false, 6},
+		{3, true, 6},
+		{4, false, 8},
+		{4, true, 8},
+		{5, false, 9},
+		{5, true, 10},
+	}
+	for _, tc := range cases {
+		got := OptimalGuesses(tc.length, tc.allowRepeats)
+		if got != tc.want {
+			t.Errorf("OptimalGuesses(%d, %v) = %d, want %d", tc.length, tc.allowRepeats, got, tc.want)
+		}
+	}
+}
+
+func TestNewGame_PlayerDifficulty_MaxGuesses(t *testing.T) {
+	// OptimalGuesses(3, false) = 6; medium = ceil(6 * 1.5) = 9
+	cfg := Config{Length: 3, AllowRepeats: false}
+	cases := []struct {
+		difficulty Difficulty
+		wantMax    int
+	}{
+		{DifficultyEasy, 0},
+		{DifficultyHard, 6},
+		{DifficultyMedium, 9},
+	}
+	for _, tc := range cases {
+		g, err := NewGame(cfg, ModePlayerGuesses, tc.difficulty, RandomSelector{})
+		if err != nil {
+			t.Fatalf("NewGame error: %v", err)
+		}
+		if g.MaxGuesses != tc.wantMax {
+			t.Errorf("difficulty=%s: MaxGuesses = %d, want %d", tc.difficulty, g.MaxGuesses, tc.wantMax)
+		}
+	}
+}
+
+func TestNewGame_ComputerMode_NoMaxGuesses(t *testing.T) {
+	cfg := Config{Length: 3, AllowRepeats: false}
+	for _, d := range []Difficulty{DifficultyEasy, DifficultyMedium, DifficultyHard} {
+		g, err := NewGame(cfg, ModeComputerGuesses, d, firstSelector{})
+		if err != nil {
+			t.Fatalf("NewGame error: %v", err)
+		}
+		if g.MaxGuesses != 0 {
+			t.Errorf("computer mode difficulty=%s: MaxGuesses = %d, want 0", d, g.MaxGuesses)
+		}
+	}
+}

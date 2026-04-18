@@ -170,7 +170,7 @@ func (h *Handler) CreateGuess(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if g.IsComplete() {
+	if g.IsGameOver() {
 		mode, diff := string(g.Mode), string(g.Difficulty)
 		metrics.GamesCompleted.WithLabelValues(mode, diff).Inc()
 		metrics.GuessesPerGame.WithLabelValues(mode, diff).Observe(float64(len(g.Guesses)))

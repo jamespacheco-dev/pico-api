@@ -29,6 +29,7 @@ type Status string
 const (
 	StatusInProgress Status = "in_progress"
 	StatusComplete   Status = "complete"
+	StatusLost       Status = "lost"
 )
 
 // Config holds the settings chosen at game creation.
@@ -58,7 +59,9 @@ type Game struct {
 	Config         Config     `json:"config"`
 	Difficulty     Difficulty `json:"difficulty"`
 	Status         Status     `json:"status"`
+	MaxGuesses     int        `json:"max_guesses"`
 	CurrentGuess   string     `json:"current_guess,omitempty"`
+	RevealedSecret string     `json:"revealed_secret,omitempty"`
 	Guesses        []Guess    `json:"guesses"`
 	LastActivityAt time.Time  `json:"last_activity_at"`
 
@@ -78,6 +81,11 @@ var (
 // IsComplete reports whether the game has been won.
 func (g *Game) IsComplete() bool {
 	return g.Status == StatusComplete
+}
+
+// IsGameOver reports whether the game has ended (won or lost).
+func (g *Game) IsGameOver() bool {
+	return g.Status == StatusComplete || g.Status == StatusLost
 }
 
 // ApplyGuess processes a player's guess in player_guesses mode.
@@ -102,6 +110,9 @@ func (g *Game) ApplyGuess(guess string) (Feedback, error) {
 
 	if fb.Fermi == g.Config.Length {
 		g.Status = StatusComplete
+	} else if g.MaxGuesses > 0 && len(g.Guesses) >= g.MaxGuesses {
+		g.Status = StatusLost
+		g.RevealedSecret = g.secret
 	}
 
 	g.LastActivityAt = time.Now()

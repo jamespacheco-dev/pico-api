@@ -3,9 +3,23 @@ package game
 import (
 	"crypto/rand"
 	"fmt"
+	"math"
 	mathrand "math/rand/v2"
 	"time"
 )
+
+// OptimalGuesses returns the guess limit for Hard difficulty: ceil(log10(possibilities) * 2).
+func OptimalGuesses(length int, allowRepeats bool) int {
+	n := 1
+	for i := 0; i < length; i++ {
+		if allowRepeats {
+			n *= 10
+		} else {
+			n *= (10 - i)
+		}
+	}
+	return int(math.Ceil(math.Log10(float64(n)) * 2))
+}
 
 // NewGame creates a new game session with the given configuration.
 // For player_guesses mode: generates a random secret number.
@@ -32,6 +46,12 @@ func NewGame(cfg Config, mode Mode, difficulty Difficulty, sel Selector) (*Game,
 	switch mode {
 	case ModePlayerGuesses:
 		g.secret = candidates[mathrand.IntN(len(candidates))]
+		switch difficulty {
+		case DifficultyHard:
+			g.MaxGuesses = OptimalGuesses(cfg.Length, cfg.AllowRepeats)
+		case DifficultyMedium:
+			g.MaxGuesses = int(math.Ceil(float64(OptimalGuesses(cfg.Length, cfg.AllowRepeats)) * 1.5))
+		}
 	case ModeComputerGuesses:
 		g.candidates = candidates
 		g.CurrentGuess = sel.Select(candidates)

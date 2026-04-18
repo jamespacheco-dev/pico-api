@@ -292,7 +292,7 @@ func TestRollback_WrongMode(t *testing.T) {
 	}
 }
 
-// --- IsComplete ---
+// --- IsComplete / IsGameOver ---
 
 func TestIsComplete(t *testing.T) {
 	g := newPlayerGame("123")
@@ -302,5 +302,77 @@ func TestIsComplete(t *testing.T) {
 	g.ApplyGuess("123")
 	if !g.IsComplete() {
 		t.Error("game should be complete after correct guess")
+	}
+}
+
+func TestIsGameOver(t *testing.T) {
+	g := newPlayerGame("123")
+	if g.IsGameOver() {
+		t.Error("new game should not be game over")
+	}
+	g.Status = StatusComplete
+	if !g.IsGameOver() {
+		t.Error("complete game should be game over")
+	}
+	g.Status = StatusLost
+	if !g.IsGameOver() {
+		t.Error("lost game should be game over")
+	}
+}
+
+// --- Guess limit (player difficulty) ---
+
+func newLimitedPlayerGame(secret string, maxGuesses int) *Game {
+	g := newPlayerGame(secret)
+	g.MaxGuesses = maxGuesses
+	return g
+}
+
+func TestApplyGuess_LostWhenGuessLimitReached(t *testing.T) {
+	g := newLimitedPlayerGame("123", 2)
+	g.ApplyGuess("456")
+	if _, err := g.ApplyGuess("789"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if g.Status != StatusLost {
+		t.Errorf("Status = %v, want lost", g.Status)
+	}
+	if g.RevealedSecret != "123" {
+		t.Errorf("RevealedSecret = %q, want %q", g.RevealedSecret, "123")
+	}
+}
+
+func TestApplyGuess_WinOnFinalGuess(t *testing.T) {
+	g := newLimitedPlayerGame("123", 2)
+	g.ApplyGuess("456")
+	if _, err := g.ApplyGuess("123"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if g.Status != StatusComplete {
+		t.Errorf("Status = %v, want complete (win beats limit)", g.Status)
+	}
+	if g.RevealedSecret != "" {
+		t.Errorf("RevealedSecret should be empty on win, got %q", g.RevealedSecret)
+	}
+}
+
+func TestApplyGuess_LostGameRejectsInput(t *testing.T) {
+	g := newLimitedPlayerGame("123", 1)
+	g.ApplyGuess("456") // wrong — sets StatusLost
+	if g.Status != StatusLost {
+		t.Fatalf("expected lost status after limit, got %v", g.Status)
+	}
+	if _, err := g.ApplyGuess("123"); !errors.Is(err, ErrGameComplete) {
+		t.Errorf("expected ErrGameComplete for lost game, got %v", err)
+	}
+}
+
+func TestApplyGuess_UnlimitedWhenMaxGuessesZero(t *testing.T) {
+	g := newPlayerGame("123") // MaxGuesses = 0
+	for i := 0; i < 15; i++ {
+		g.ApplyGuess("456")
+	}
+	if g.Status != StatusInProgress {
+		t.Errorf("Status = %v; unlimited game should stay in_progress", g.Status)
 	}
 }
