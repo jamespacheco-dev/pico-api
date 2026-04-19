@@ -9,6 +9,7 @@ import (
 
 	"github.com/jamespacheco-dev/pico-api/internal/game"
 	"github.com/jamespacheco-dev/pico-api/internal/metrics"
+	dto "github.com/prometheus/client_model/go"
 )
 
 type Handler struct {
@@ -218,6 +219,14 @@ func (h *Handler) Rollback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, g)
+}
+
+func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) {
+	m := &dto.Metric{}
+	metrics.ActiveGames.Write(m)
+	writeJSON(w, http.StatusOK, map[string]int64{
+		"active_games": int64(m.GetGauge().GetValue()),
+	})
 }
 
 func writeGuessError(w http.ResponseWriter, err error) {

@@ -15,6 +15,7 @@ func NewRouter(store Store) http.Handler {
 	mux.HandleFunc("GET /games/{id}", metrics.Middleware("GET /games/{id}", h.GetGame))
 	mux.HandleFunc("POST /games/{id}/guesses", metrics.Middleware("POST /games/{id}/guesses", h.CreateGuess))
 	mux.HandleFunc("POST /games/{id}/rollback", metrics.Middleware("POST /games/{id}/rollback", h.Rollback))
+	mux.HandleFunc("GET /stats", metrics.Middleware("GET /stats", h.GetStats))
 	mux.Handle("GET /metrics", promhttp.Handler())
 
 	return corsMiddleware(mux)
